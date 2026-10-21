@@ -76,8 +76,6 @@
       for (var n = 0; n < marks.length; n++) { var t = marks[n][0] - s; if (t >= 0 && t <= newDur) mp.setValueAtTime(t, marks[n][1]); }
     }
     c.duration = newDur;
-    c.workAreaStart = 0;
-    c.workAreaDuration = newDur;
 
     // move every instance so the content plays at the same moment, keeping trims
     for (k = 0; k < saved.length; k++) {
@@ -90,6 +88,10 @@
       setInOut(L, inP, outP);
       if (sv.locked) L.locked = true;
     }
+    // reset the work area to the whole (new) duration; cosmetic, so never fatal
+    try { c.workAreaStart = 0; } catch (e1) {}
+    try { c.workAreaDuration = c.duration - c.workAreaStart; }
+    catch (e2) { try { c.workAreaDuration = c.duration - c.workAreaStart - fd / 100; } catch (e3) {} }
     report.push(c.name + ": trimmed to " + newDur.toFixed(2) + "s (content was at " + s.toFixed(2) + "s to " + e.toFixed(2) + "s), " + saved.length + " instance(s) adjusted");
   }
 
@@ -105,7 +107,8 @@
       found++;
       if (done[src.id]) continue;
       done[src.id] = true;
-      trimComp(src, report);
+      try { trimComp(src, report); }
+      catch (err) { report.push(src.name + ": ERROR, " + err.toString() + " (use Edit > Undo to revert this run)"); }
     }
     app.endUndoGroup();
     if (!found) report.push("No precomp layers " + (comp.selectedLayers.length ? "selected." : "in this comp."));
